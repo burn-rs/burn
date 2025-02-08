@@ -41,6 +41,7 @@ use crate::{
             matmul::MatmulNode,
             max_pool1d::MaxPool1dNode,
             max_pool2d::MaxPool2dNode,
+            one_hot::OneHotNode,
             pad::PadNode,
             prelu::PReluNode,
             random_normal::RandomNormalNode,
@@ -69,8 +70,8 @@ use super::op_configuration::{
     concat_config, conv1d_config, conv2d_config, conv3d_config, conv_transpose1d_config,
     conv_transpose2d_config, conv_transpose3d_config, dropout_config, expand_config,
     flatten_config, gather_config, hard_sigmoid_config, layer_norm_config, leaky_relu_config,
-    linear_config, log_softmax_config, max_pool1d_config, max_pool2d_config, pad_config,
-    reduce_max_config, reduce_mean_config, reduce_min_config, reduce_prod_config,
+    linear_config, log_softmax_config, max_pool1d_config, max_pool2d_config, one_hot_config,
+    pad_config, reduce_max_config, reduce_mean_config, reduce_min_config, reduce_prod_config,
     reduce_sum_config, reshape_config, resize_config, shape_config, slice_config, softmax_config,
     squeeze_config, tile_config, transpose_config, trilu_config, unsqueeze_config,
 };
@@ -282,6 +283,7 @@ impl ParsedOnnxGraph {
                 NodeType::MatMul => graph.register(Self::matmul_conversion(node)),
                 NodeType::Neg => graph.register(Self::neg_conversion(node)),
                 NodeType::Not => graph.register(Self::not_conversion(node)),
+                NodeType::OneHot => graph.register(Self::one_hot_conversion(node)),
                 NodeType::Greater => graph.register(Self::greater_conversion(node)),
                 NodeType::GreaterOrEqual => graph.register(Self::greater_or_equal_conversion(node)),
                 NodeType::Less => graph.register(Self::less_conversion(node)),
@@ -1263,6 +1265,14 @@ impl ParsedOnnxGraph {
         let output = TensorType::from(node.outputs.first().unwrap());
         let config = trilu_config(&node);
         TriluNode::new(input, output, config)
+    }
+
+    fn one_hot_conversion(node: Node) -> OneHotNode {
+        let input = TensorType::from(node.inputs.first().unwrap());
+        let output = TensorType::from(node.outputs.first().unwrap());
+
+        let (_, on_value, off_value, axis) = one_hot_config(&node);
+        OneHotNode::new(input, output, 3, on_value, off_value, axis)
     }
 }
 
